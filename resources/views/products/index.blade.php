@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+
 <head>
     @include('partials.head', ['title' => 'Shoesify – Katalog Sneaker'])
     @livewireStyles
@@ -7,17 +8,20 @@
 
 <body class="relative min-h-screen bg-neutral-950 text-white">
     <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div class="absolute -top-32 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full blur-[120px]" style="background: rgba(1, 107, 97, 0.35);"></div>
-        <div class="absolute bottom-[-180px] right-10 h-[360px] w-[360px] rounded-full bg-[#5470f1]/20 blur-[120px]"></div>
+        <div class="absolute -top-32 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full blur-[120px]"
+            style="background: rgba(1, 107, 97, 0.35);"></div>
+        <div class="absolute bottom-[-180px] right-10 h-[360px] w-[360px] rounded-full bg-[#5470f1]/20 blur-[120px]">
+        </div>
         <div class="absolute left-0 top-24 h-[280px] w-[280px] rounded-full bg-[#2fd3c6]/20 blur-[120px]"></div>
     </div>
 
     @include('partials.front.nav', [
         'navLinks' => [
-            ['label' => 'Katalog', 'href' => route('products.index') . '#katalog'],
-            ['label' => 'Homepage', 'href' => route('home')],
-            ['label' => 'Promotions', 'href' => route('home') . '#promos'],
-            ['label' => 'Reviews', 'href' => route('home') . '#testimonials'],
+            ['label' => 'Product', 'href' => route('products.index')],
+            ['label' => 'Collections', 'href' => route('home') . '#collections'],
+            ['label' => 'Categories', 'href' => route('home') . '#categories'],
+            ['label' => 'Promotion', 'href' => route('home') . '#promos'],
+            // ['label' => 'Reviews', 'href' => route('home') . '#testimonials'],
         ],
     ])
 
@@ -39,17 +43,21 @@
                 <div class="space-y-5">
                     <span class="pill-badge">Kurasi minggu ini</span>
                     <h1 class="text-4xl font-semibold leading-tight tracking-tight text-white md:text-5xl">
-                        Jelajahi lini sneaker tercanggih dengan filter real-time dan pengalaman quick view yang super mulus.
+                        Jelajahi lini sneaker tercanggih dengan filter real-time dan pengalaman quick view yang super
+                        mulus.
                     </h1>
                     <p class="max-w-2xl text-sm text-white/70 md:text-base">
-                        Katalog Shoesify menggabungkan teknologi Livewire dengan desain future-forward. Cari sesuai kebutuhan, lihat detail warna, dan tambahkan ke keranjang tanpa jeda.
+                        Katalog Shoesify menggabungkan teknologi Livewire dengan desain future-forward. Cari sesuai
+                        kebutuhan, lihat detail warna, dan tambahkan ke keranjang tanpa jeda.
                     </p>
                     <div class="flex flex-wrap gap-3">
-                        <a href="#katalog" class="inline-flex items-center gap-2 rounded-full bg-[#4de4d4] px-6 py-3 text-sm font-semibold text-neutral-900 shadow-[0_25px_60px_rgba(77,228,212,0.45)] transition hover:-translate-y-0.5">
+                        <a href="#katalog"
+                            class="inline-flex items-center gap-2 rounded-full bg-[#4de4d4] px-6 py-3 text-sm font-semibold text-neutral-900 shadow-[0_25px_60px_rgba(77,228,212,0.45)] transition hover:-translate-y-0.5">
                             Mulai filter
                             <span aria-hidden="true">→</span>
                         </a>
-                        <a href="{{ route('home') }}#collections" class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                        <a href="{{ route('home') }}#collections"
+                            class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
                             Lihat highlight
                         </a>
                     </div>
@@ -79,7 +87,7 @@
 
         <section id="katalog" class="space-y-10">
             <h2 class="section-heading">Filter & temukan sneaker favoritmu</h2>
-            <livewire:products.catalog :search="request('search')" />
+            <livewire:products.catalog :search="request('search', '')" />
         </section>
     </main>
 
@@ -87,5 +95,7 @@
     @include('partials.front.quick-view')
 
     @livewireScripts
+    @fluxScripts
 </body>
+
 </html>

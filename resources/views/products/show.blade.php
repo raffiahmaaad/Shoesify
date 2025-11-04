@@ -405,5 +405,6 @@
     @include('partials.front.quick-view')
 
     @livewireScripts
+    @fluxScripts
 </body>
 </html>

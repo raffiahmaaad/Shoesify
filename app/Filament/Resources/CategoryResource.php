@@ -6,8 +6,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,7 +29,7 @@ class CategoryResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make('Informasi Kategori')
+                Section::make('Informasi Kategori')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->required()
@@ -44,7 +46,7 @@ class CategoryResource extends Resource
                             ->maxLength(2048),
                     ])
                     ->columns(2),
-                Forms\Components\Section::make('Pengaturan')
+                Section::make('Pengaturan')
                     ->schema([
                         Forms\Components\Select::make('parent_id')
                             ->label('Parent Category')
@@ -92,13 +94,11 @@ class CategoryResource extends Resource
                     ->label('Status'),
             ])
             ->defaultSort('sort_order')
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Actions\DeleteBulkAction::make(),
             ]);
     }
 

@@ -6,9 +6,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section as ComponentsSection;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,9 +30,9 @@ class ProductResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Informasi Produk')
+            ComponentsSection::make('Informasi Produk')
                 ->schema([
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('name')
                                 ->required()
@@ -56,7 +59,7 @@ class ProductResource extends Resource
                         ->required()
                         ->searchable()
                         ->preload(),
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('price')
                                 ->numeric()
@@ -73,7 +76,7 @@ class ProductResource extends Resource
                                 ->maxValue(90)
                                 ->default(0),
                         ]),
-                    Forms\Components\Grid::make(3)
+                    Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('rating')
                                 ->numeric()
@@ -102,7 +105,7 @@ class ProductResource extends Resource
                 ])
                 ->collapsible()
                 ->columns(2),
-            Section::make('Pengaturan Tambahan')
+            ComponentsSection::make('Pengaturan Tambahan')
                 ->schema([
                     Forms\Components\Toggle::make('is_active')
                         ->default(true)
@@ -118,7 +121,7 @@ class ProductResource extends Resource
                         ->maxLength(500),
                 ])
                 ->columns(2),
-            Section::make('Variants')
+            ComponentsSection::make('Variants')
                 ->schema([
                     Forms\Components\Repeater::make('variants')
                         ->relationship()
@@ -173,7 +176,8 @@ class ProductResource extends Resource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('price')
-                    ->money('usd', true)
+                    ->label('Price')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format((int) $state, 0, ',', '.'))
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
                 Tables\Columns\IconColumn::make('is_featured')->boolean(),
@@ -189,16 +193,14 @@ class ProductResource extends Resource
                 Tables\Filters\SelectFilter::make('category')->relationship('category', 'name'),
             ])
             ->defaultSort('updated_at', 'desc')
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                Actions\ActionGroup::make([
+                    Actions\EditAction::make(),
+                    Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Actions\DeleteBulkAction::make(),
             ]);
     }
 

@@ -8,30 +8,131 @@ const onReady = (callback) => {
 };
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const themeStorageKey = 'shoesify:theme';
+const fluxAppearanceStorageKey = 'flux.appearance';
 const recentSearchStorageKey = 'shoesify:recent-searches';
 
-window.headerShell = () => ({
-    mobileSearch: false,
-    theme: 'light',
-    init() {
-        const storedTheme = localStorage.getItem(themeStorageKey);
-        if (storedTheme === 'dark' || storedTheme === 'light') {
-            this.theme = storedTheme;
-        } else {
-            this.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
+const ensureFluxThemeBridge = () => {
+    try {
+        const prefersDarkMedia = window.matchMedia('(prefers-color-scheme: dark)');
 
-        this.applyTheme();
+        const readStoredPreference = () => {
+            const stored = localStorage.getItem(fluxAppearanceStorageKey);
+            return stored === 'dark' || stored === 'light' ? stored : null;
+        };
 
-        const listener = (event) => {
-            if (!localStorage.getItem(themeStorageKey)) {
-                this.theme = event.matches ? 'dark' : 'light';
-                this.applyTheme();
+        const resolveInitialMode = () => {
+            const stored = readStoredPreference();
+            if (stored) {
+                return stored;
+            }
+
+            return prefersDarkMedia.matches ? 'dark' : 'light';
+        };
+
+        let appearanceTarget = typeof window.$flux === 'object' && window.$flux !== null ? window.$flux : {};
+        let currentMode = resolveInitialMode();
+
+        const applyMode = (mode, { persistChoice = true } = {}) => {
+            const nextMode = mode === 'system' ? (prefersDarkMedia.matches ? 'dark' : 'light') : mode;
+            currentMode = nextMode === 'dark' ? 'dark' : 'light';
+
+            if (window.Flux?.applyAppearance) {
+                window.Flux.applyAppearance(mode);
+            } else {
+                document.documentElement.classList.toggle('dark', currentMode === 'dark');
+            }
+
+            document.documentElement.dataset.theme = currentMode;
+
+            if (persistChoice) {
+                if (mode === 'system') {
+                    localStorage.removeItem(fluxAppearanceStorageKey);
+                } else {
+                    localStorage.setItem(fluxAppearanceStorageKey, currentMode);
+                }
+            } else if (mode === 'system') {
+                localStorage.removeItem(fluxAppearanceStorageKey);
             }
         };
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', listener);
+        applyMode(currentMode, { persistChoice: false });
+
+        const proxyHandler = {
+            get(_unused, property) {
+                if (property === 'dark') {
+                    return currentMode === 'dark';
+                }
+
+                const value = Reflect.get(appearanceTarget, property);
+                return typeof value === 'function' ? value.bind(appearanceTarget) : value;
+            },
+            set(_unused, property, value) {
+                if (property === 'dark') {
+                    applyMode(Boolean(value) ? 'dark' : 'light');
+                    return true;
+                }
+
+                if (property === 'appearance') {
+                    if (value === 'system') {
+                        applyMode('system', { persistChoice: false });
+                    } else if (value === 'dark' || value === true) {
+                        applyMode('dark');
+                    } else if (value === 'light' || value === false) {
+                        applyMode('light');
+                    } else {
+                        Reflect.set(appearanceTarget, property, value);
+                    }
+
+                    return true;
+                }
+
+                return Reflect.set(appearanceTarget, property, value);
+            },
+            has(_unused, property) {
+                if (property === 'dark') {
+                    return true;
+                }
+
+                return property in appearanceTarget;
+            },
+        };
+
+        const proxy = new Proxy({}, proxyHandler);
+
+        Object.defineProperty(window, '$flux', {
+            configurable: true,
+            enumerable: true,
+            get() {
+                return proxy;
+            },
+            set(value) {
+                if (value && typeof value === 'object') {
+                    appearanceTarget = value;
+                    if ('dark' in value) {
+                        applyMode(Boolean(value.dark) ? 'dark' : 'light');
+                    } else if ('appearance' in value && typeof value.appearance === 'string') {
+                        applyMode(value.appearance, { persistChoice: false });
+                    }
+                }
+            },
+        });
+
+        prefersDarkMedia.addEventListener('change', (event) => {
+            if (readStoredPreference() === null) {
+                applyMode(event.matches ? 'dark' : 'light', { persistChoice: false });
+            }
+        });
+    } catch (error) {
+        console.warn('Unable to initialize Flux theme bridge', error);
+    }
+};
+
+onReady(() => ensureFluxThemeBridge());
+
+window.headerShell = () => ({
+    mobileSearch: false,
+    init() {
+        ensureFluxThemeBridge();
     },
     toggleSearch() {
         this.mobileSearch = !this.mobileSearch;
@@ -42,15 +143,6 @@ window.headerShell = () => ({
                 input?.focus();
             }, 120);
         }
-    },
-    toggleTheme() {
-        this.theme = this.theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem(themeStorageKey, this.theme);
-        this.applyTheme();
-    },
-    applyTheme() {
-        document.documentElement.classList.toggle('dark', this.theme === 'dark');
-        document.documentElement.dataset.theme = this.theme;
     },
 });
 

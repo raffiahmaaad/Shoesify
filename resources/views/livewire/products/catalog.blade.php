@@ -14,11 +14,11 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">Harga</h3>
-                    <span class="text-xs text-white/60">${{ $priceMin }} – ${{ $priceMax }}</span>
+                    <span class="text-xs text-white/60">Rp {{ number_format($priceMin, 0, ',', '.') }} – Rp {{ number_format($priceMax, 0, ',', '.') }}</span>
                 </div>
                 <div class="space-y-3">
-                    <input type="range" min="{{ $priceBounds['min'] }}" max="{{ $priceBounds['max'] }}" step="5" wire:model.live="priceMin" class="w-full accent-[#4de4d4]">
-                    <input type="range" min="{{ $priceBounds['min'] }}" max="{{ $priceBounds['max'] }}" step="5" wire:model.live="priceMax" class="w-full accent-[#4de4d4]">
+                    <input type="range" min="{{ $priceBounds['min'] }}" max="{{ $priceBounds['max'] }}" step="1" wire:model.live="priceMin" class="w-full accent-[#4de4d4]">
+                    <input type="range" min="{{ $priceBounds['min'] }}" max="{{ $priceBounds['max'] }}" step="1" wire:model.live="priceMax" class="w-full accent-[#4de4d4]">
                 </div>
             </div>
 
@@ -156,10 +156,10 @@
                                     </div>
                                     <div class="mt-auto flex items-center justify-between">
                                         <div class="flex items-baseline gap-2 text-white">
-                                            <span class="text-xl font-semibold">${{ $product['price'] }}</span>
+                                            <span class="text-xl font-semibold">Rp {{ number_format($product['price'], 0, ',', '.') }}</span>
                                             @if ($product['discount'] > 0)
                                                 <span class="text-sm text-white/40 line-through">
-                                                    ${{ number_format($product['price'] / (1 - $product['discount'] / 100), 0) }}
+                                                    Rp {{ number_format($product['price'] / (1 - $product['discount'] / 100), 0, ',', '.') }}
                                                 </span>
                                             @endif
                                         </div>
@@ -214,10 +214,10 @@
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-baseline gap-2 text-white">
-                                            <span class="text-2xl font-semibold">${{ $product['price'] }}</span>
+                                            <span class="text-2xl font-semibold">Rp {{ number_format($product['price'], 0, ',', '.') }}</span>
                                             @if ($product['discount'] > 0)
                                                 <span class="text-sm text-white/40 line-through">
-                                                    ${{ number_format($product['price'] / (1 - $product['discount'] / 100), 0) }}
+                                                    Rp {{ number_format($product['price'] / (1 - $product['discount'] / 100), 0, ',', '.') }}
                                                 </span>
                                             @endif
                                         </div>

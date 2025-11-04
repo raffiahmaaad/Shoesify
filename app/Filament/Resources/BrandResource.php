@@ -6,8 +6,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BrandResource\Pages;
 use App\Models\Brand;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -25,7 +27,7 @@ class BrandResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\Grid::make(2)
+            Grid::make(2)
                 ->schema([
                     Forms\Components\TextInput::make('name')
                         ->required()
@@ -41,7 +43,7 @@ class BrandResource extends Resource
                 ->maxLength(2048),
             Forms\Components\Textarea::make('description')
                 ->rows(3),
-            Forms\Components\Grid::make(2)
+            Grid::make(2)
                 ->schema([
                     Forms\Components\Toggle::make('is_featured')
                         ->label('Featured')
@@ -81,13 +83,11 @@ class BrandResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active')->label('Active'),
                 Tables\Filters\TernaryFilter::make('is_featured')->label('Featured'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Actions\DeleteBulkAction::make(),
             ]);
     }
 

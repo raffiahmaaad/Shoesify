@@ -1,14 +1,15 @@
 <?php
 
-declare(strict_types:1);
+declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Notifications\OrderPlacedNotification;
+use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Notifications\OrderPlacedNotification;
 
 class Order extends Model
 {
@@ -22,10 +23,13 @@ class Order extends Model
         'subtotal',
         'discount_total',
         'shipping_total',
+        'shipping_service',
+        'tracking_number',
         'tax_total',
         'grand_total',
         'payment_method',
         'payment_status',
+        'payment_payload',
         'shipping_address',
         'billing_address',
         'notes',
@@ -41,6 +45,7 @@ class Order extends Model
         'grand_total' => 'integer',
         'shipping_address' => 'array',
         'billing_address' => 'array',
+        'payment_payload' => 'array',
         'placed_at' => 'datetime',
         'paid_at' => 'datetime',
     ];
@@ -52,6 +57,22 @@ class Order extends Model
 
             if ($order->user) {
                 $order->user->notify(new OrderPlacedNotification($order));
+            }
+        });
+
+        static::updated(function (Order $order): void {
+            $order->loadMissing('user');
+
+            $fields = collect([
+                'status',
+                'payment_status',
+                'tracking_number',
+                'shipping_service',
+            ])->filter(fn ($field) => $order->wasChanged($field));
+
+            if ($fields->isNotEmpty() && $order->user) {
+                $changes = $fields->mapWithKeys(fn ($field) => [$field => $order->{$field}])->toArray();
+                $order->user->notify(new OrderStatusUpdatedNotification($order, $changes));
             }
         });
     }

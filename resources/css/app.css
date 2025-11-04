@@ -43,6 +43,10 @@
         border-color: transparent;
     }
 
+    [x-cloak] {
+        display: none !important;
+    }
+
     body {
         @apply bg-neutral-900 text-white font-sans antialiased;
         background-image:
@@ -64,6 +68,24 @@
 @layer components {
     .glass-panel {
         @apply bg-white/8 backdrop-blur-2xl border border-white/10 shadow-[0_18px_42px_rgba(5,15,33,0.36)] rounded-3xl;
+    }
+
+    .glass-dropdown {
+        @apply relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/88 text-white/85 shadow-[0_48px_120px_rgba(5,15,33,0.6)] backdrop-blur-2xl;
+    }
+
+    .glass-dropdown::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(77, 228, 212, 0.08));
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    .glass-dropdown > * {
+        position: relative;
+        z-index: 1;
     }
 
     .section-heading {
@@ -147,6 +169,24 @@
         background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
         background-size: 32px 32px;
+    }
+
+    .custom-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.35);
+        border-radius: 9999px;
     }
 }
 

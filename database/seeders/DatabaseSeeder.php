@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             BrandSeeder::class,
             ProductSeeder::class,
+            CouponSeeder::class,
         ]);
 
         if (! User::where('email', 'test@example.com')->exists()) {

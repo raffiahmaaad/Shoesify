@@ -1,6 +1,6 @@
 <?php
 
-    use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
@@ -11,6 +11,10 @@ Route::get('/', function () {
 
 Route::view('/products', 'products.index')->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::view('/cart', 'cart.index')->name('cart.index');
+Route::view('/checkout', 'checkout.index')
+    ->middleware(['auth', 'verified'])
+    ->name('checkout.index');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
@@ -33,4 +37,12 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    Route::prefix('account')->as('account.')->middleware(['verified'])->group(function () {
+        Volt::route('account/orders', 'account.orders')->name('orders');
+        Volt::route('account/orders/{order}', 'account.orders-show')->name('orders.show');
+        Volt::route('account/profile', 'account.profile')->name('profile');
+        Volt::route('account/addresses', 'account.addresses')->name('addresses');
+        Volt::route('account/wishlist', 'account.wishlist')->name('wishlist');
+    });
 });

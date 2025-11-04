@@ -19,6 +19,7 @@ class CartItem extends Model
         'quantity',
         'unit_price',
         'line_total',
+        'saved_for_later',
         'metadata',
     ];
 
@@ -26,6 +27,7 @@ class CartItem extends Model
         'quantity' => 'integer',
         'unit_price' => 'integer',
         'line_total' => 'integer',
+        'saved_for_later' => 'boolean',
         'metadata' => 'array',
     ];
 

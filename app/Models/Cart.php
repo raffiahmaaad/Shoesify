@@ -17,10 +17,13 @@ class Cart extends Model
         'user_id',
         'session_id',
         'status',
+        'applied_coupon_id',
         'subtotal',
         'discount_total',
         'shipping_total',
+        'shipping_service',
         'tax_total',
+        'weight_total',
         'grand_total',
     ];
 
@@ -29,6 +32,7 @@ class Cart extends Model
         'discount_total' => 'integer',
         'shipping_total' => 'integer',
         'tax_total' => 'integer',
+        'weight_total' => 'integer',
         'grand_total' => 'integer',
     ];
 
@@ -40,5 +44,10 @@ class Cart extends Model
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class, 'applied_coupon_id');
     }
 }
