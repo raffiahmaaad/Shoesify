@@ -8,6 +8,127 @@ const onReady = (callback) => {
 };
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const themeStorageKey = 'shoesify:theme';
+const recentSearchStorageKey = 'shoesify:recent-searches';
+
+window.headerShell = () => ({
+    mobileSearch: false,
+    theme: 'light',
+    init() {
+        const storedTheme = localStorage.getItem(themeStorageKey);
+        if (storedTheme === 'dark' || storedTheme === 'light') {
+            this.theme = storedTheme;
+        } else {
+            this.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        this.applyTheme();
+
+        const listener = (event) => {
+            if (!localStorage.getItem(themeStorageKey)) {
+                this.theme = event.matches ? 'dark' : 'light';
+                this.applyTheme();
+            }
+        };
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', listener);
+    },
+    toggleSearch() {
+        this.mobileSearch = !this.mobileSearch;
+
+        if (this.mobileSearch) {
+            window.setTimeout(() => {
+                const input = document.querySelector('[data-mobile-search] input[type="search"]');
+                input?.focus();
+            }, 120);
+        }
+    },
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(themeStorageKey, this.theme);
+        this.applyTheme();
+    },
+    applyTheme() {
+        document.documentElement.classList.toggle('dark', this.theme === 'dark');
+        document.documentElement.dataset.theme = this.theme;
+    },
+});
+
+window.headerSearchStore = () => ({
+    recent: [],
+    dropdown: false,
+    init() {
+        this.recent = this.read();
+        this.$watch('$wire.query', (value) => {
+            this.dropdown = Boolean(value);
+        });
+    },
+    open() {
+        this.dropdown = true;
+    },
+    close() {
+        this.dropdown = false;
+    },
+    isOpen(query) {
+        return this.dropdown || Boolean(query) || this.recent.length > 0;
+    },
+    remember(value) {
+        const term = (value ?? '').trim();
+        if (!term) {
+            return;
+        }
+
+        this.recent = [
+            term,
+            ...this.recent.filter((item) => item.toLowerCase() !== term.toLowerCase()),
+        ].slice(0, 6);
+
+        this.persist();
+    },
+    apply(value) {
+        this.remember(value);
+        this.$wire.set('query', value);
+        this.$nextTick(() => this.$refs.input?.focus());
+        this.dropdown = true;
+    },
+    clear() {
+        this.recent = [];
+        this.persist();
+    },
+    read() {
+        try {
+            const stored = localStorage.getItem(recentSearchStorageKey);
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.warn('Failed to parse stored searches', error);
+            return [];
+        }
+    },
+    persist() {
+        localStorage.setItem(recentSearchStorageKey, JSON.stringify(this.recent));
+    },
+});
+
+window.footerSection = ({ defaultOpen = false } = {}) => ({
+    open: defaultOpen,
+    init() {
+        const media = window.matchMedia('(min-width: 768px)');
+        const sync = () => {
+            this.open = media.matches ? true : defaultOpen;
+        };
+
+        sync();
+        media.addEventListener('change', sync);
+    },
+    toggle() {
+        if (window.innerWidth >= 768) {
+            return;
+        }
+
+        this.open = !this.open;
+    },
+});
 
 const loadSwiper = (() => {
     let loader;
@@ -176,6 +297,16 @@ const setupAddToCart = (showToast) => {
         button.addEventListener('click', (event) => {
             createRipple(button, event);
             showToast('Produk berhasil masuk ke keranjang.');
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+        });
+    });
+};
+
+const setupBuyNow = (showToast) => {
+    document.querySelectorAll('[data-buy-now], [data-sticky-cta]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            createRipple(button, event);
+            showToast('Checkout ekspres segera tersedia.');
         });
     });
 };
@@ -415,6 +546,342 @@ const setupTestimonialSwiper = () => {
         });
 };
 
+const setupProductDetail = (showToast) => {
+    const container = document.querySelector('[data-product-detail]');
+    if (!container) {
+        return;
+    }
+
+    const payload = (() => {
+        try {
+            return JSON.parse(container.getAttribute('data-product') ?? '{}');
+        } catch (error) {
+            console.error('Failed to parse product payload', error);
+            return {};
+        }
+    })();
+
+    const state = {
+        color: payload.colors?.[0]?.name ?? null,
+        size: payload.sizes?.[0] ?? null,
+        quantity: 1,
+    };
+
+    const mainImage = container.querySelector('[data-product-main-image]');
+    const priceEl = container.querySelector('[data-product-price]');
+    const originalPriceEl = container.querySelector('[data-product-original-price]');
+    const stockEl = container.querySelector('[data-product-stock]');
+    const sticky = document.querySelector('[data-product-sticky]');
+    const stickyPrice = document.querySelector('[data-sticky-price]');
+
+    const findVariant = () =>
+        (payload.variants ?? []).find(
+            (variant) =>
+                (!state.color || variant.color === state.color) &&
+                (!state.size || variant.size === state.size)
+        );
+
+    const availableStock = () => {
+        const variant = findVariant();
+        if (variant) {
+            return Math.max(0, Number.parseInt(variant.stock ?? 0, 10));
+        }
+
+        return (payload.variants ?? []).reduce(
+            (carry, variant) => carry + Math.max(0, Number.parseInt(variant.stock ?? 0, 10)),
+            0
+        );
+    };
+
+    const computePrice = () => {
+        const basePrice = Number.parseInt(payload.price ?? 0, 10);
+        const variant = findVariant();
+        const adjusted = variant ? basePrice + Number.parseInt(variant.price_adjustment ?? 0, 10) : basePrice;
+        const price = Math.max(0, adjusted);
+
+        const original = (() => {
+            if (variant && payload.originalPrice) {
+                return payload.originalPrice + Number.parseInt(variant.price_adjustment ?? 0, 10);
+            }
+
+            return payload.originalPrice ?? null;
+        })();
+
+        return { price, original };
+    };
+
+    const formatCurrency = (amount) => {
+        return `$${Number.parseInt(amount, 10).toLocaleString('en-US')}`;
+    };
+
+    const markActiveButtons = () => {
+        container.querySelectorAll('[data-variant-color]').forEach((button) => {
+            const value = button.getAttribute('data-variant-color');
+            const isActive = value === state.color;
+            button.classList.toggle('is-active', isActive);
+        });
+
+        container.querySelectorAll('[data-variant-size]').forEach((button) => {
+            const size = button.getAttribute('data-variant-size');
+            const variantExists = (payload.variants ?? []).some((variant) => {
+                const matchesSize = variant.size === size;
+                const matchesColor = !state.color || variant.color === state.color;
+                return matchesSize && matchesColor && Number.parseInt(variant.stock ?? 0, 10) > 0;
+            });
+
+            const isDisabled = !variantExists;
+            button.dataset.disabled = String(isDisabled);
+            button.toggleAttribute('disabled', isDisabled);
+
+            if (isDisabled && state.size === size) {
+                state.size = null;
+            }
+
+            const isActive = size === state.size;
+            button.classList.toggle('bg-white', isActive);
+            button.classList.toggle('text-neutral-900', isActive);
+            button.classList.toggle('border-white', isActive);
+            button.classList.toggle('text-white/70', !isActive);
+            button.classList.toggle('border-white/15', !isActive);
+        });
+    };
+
+    const updateQuantityControls = () => {
+        const quantityInput = container.querySelector('[data-quantity-input]');
+        const decrease = container.querySelector('[data-quantity-decrease]');
+        const increase = container.querySelector('[data-quantity-increase]');
+        const max = availableStock();
+
+        if (!quantityInput || !decrease || !increase) {
+            return;
+        }
+
+        quantityInput.value = String(state.quantity);
+        decrease.disabled = state.quantity <= 1;
+        increase.disabled = state.quantity >= max;
+
+        decrease.classList.toggle('opacity-40', decrease.disabled);
+        increase.classList.toggle('opacity-40', increase.disabled);
+    };
+
+    const updatePrice = () => {
+        const { price, original } = computePrice();
+        const stock = availableStock();
+
+        if (priceEl) {
+            priceEl.textContent = formatCurrency(price);
+        }
+
+        if (stickyPrice) {
+            stickyPrice.textContent = formatCurrency(price * state.quantity);
+        }
+
+        if (originalPriceEl) {
+            if (original && original > price) {
+                originalPriceEl.textContent = formatCurrency(original);
+                originalPriceEl.classList.remove('invisible');
+            } else {
+                originalPriceEl.textContent = '';
+                originalPriceEl.classList.add('invisible');
+            }
+        }
+
+        if (stockEl) {
+            stockEl.textContent = `${stock} pasang`;
+        }
+
+        const addToCart = container.querySelector('[data-add-to-cart]');
+        const stickyCta = document.querySelector('[data-sticky-cta]');
+        const disabled = stock <= 0;
+
+        [addToCart, stickyCta].forEach((button) => {
+            if (!button) {
+                return;
+            }
+            button.toggleAttribute('disabled', disabled);
+            button.classList.toggle('opacity-60', disabled);
+        });
+    };
+
+    const refreshMainImage = () => {
+        const variant = findVariant();
+        const candidateImage =
+            (variant?.images && variant.images.length ? variant.images[0] : null) ??
+            (payload.images && payload.images.length ? payload.images[0] : null);
+
+        if (candidateImage && mainImage) {
+            mainImage.src = candidateImage;
+        }
+    };
+
+    const syncState = () => {
+        if (!state.size && payload.sizes && payload.sizes.length > 0) {
+            state.size = payload.sizes.find((size) => {
+                return (payload.variants ?? []).some((variant) => {
+                    const matchesSize = variant.size === size;
+                    const matchesColor = !state.color || variant.color === state.color;
+                    return matchesSize && matchesColor && Number.parseInt(variant.stock ?? 0, 10) > 0;
+                });
+            }) ?? payload.sizes[0];
+        }
+
+        if (!state.color && payload.colors && payload.colors.length > 0) {
+            state.color = payload.colors[0].name;
+        }
+
+        state.quantity = Math.max(1, Math.min(state.quantity, availableStock() || 1));
+
+        markActiveButtons();
+        updateQuantityControls();
+        updatePrice();
+        refreshMainImage();
+    };
+
+    container.querySelectorAll('[data-variant-color]').forEach((button) => {
+        button.addEventListener('click', () => {
+            state.color = button.getAttribute('data-variant-color');
+            syncState();
+        });
+    });
+
+    container.querySelectorAll('[data-variant-size]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (button.dataset.disabled === 'true') {
+                return;
+            }
+
+            state.size = button.getAttribute('data-variant-size');
+            syncState();
+        });
+    });
+
+    const quantityInput = container.querySelector('[data-quantity-input]');
+    const decrease = container.querySelector('[data-quantity-decrease]');
+    const increase = container.querySelector('[data-quantity-increase]');
+
+    if (quantityInput) {
+        quantityInput.addEventListener('change', () => {
+            const value = Number.parseInt(quantityInput.value, 10);
+            if (!Number.isNaN(value)) {
+                state.quantity = Math.max(1, Math.min(value, availableStock() || 1));
+                syncState();
+            }
+        });
+    }
+
+    decrease?.addEventListener('click', () => {
+        state.quantity = Math.max(1, state.quantity - 1);
+        syncState();
+    });
+
+    increase?.addEventListener('click', () => {
+        state.quantity = Math.min(availableStock() || 1, state.quantity + 1);
+        syncState();
+    });
+
+    const thumbnails = container.querySelectorAll('[data-product-thumbnail]');
+    thumbnails.forEach((thumbnail) => {
+        thumbnail.addEventListener('click', () => {
+            const image = thumbnail.getAttribute('data-image');
+            if (image && mainImage) {
+                mainImage.src = image;
+            }
+        });
+    });
+
+    const zoomButton = container.querySelector('[data-product-zoom]');
+    const lightbox = document.querySelector('[data-product-lightbox]');
+    const lightboxImage = document.querySelector('[data-product-lightbox-image]');
+    const lightboxClose = document.querySelector('[data-product-lightbox-close]');
+
+    const openLightbox = (image) => {
+        if (!lightbox || !lightboxImage) {
+            return;
+        }
+
+        lightboxImage.src = image;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const closeLightbox = () => {
+        if (!lightbox) {
+            return;
+        }
+
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    zoomButton?.addEventListener('click', () => {
+        if (mainImage?.src) {
+            openLightbox(mainImage.src);
+        }
+    });
+
+    lightboxClose?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
+    container.querySelectorAll('[data-tab-trigger]').forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+            const id = trigger.getAttribute('data-tab-trigger');
+
+            container.querySelectorAll('[data-tab-trigger]').forEach((button) => {
+                button.classList.toggle('bg-white/15', button === trigger);
+                button.classList.toggle('text-white', button === trigger);
+            });
+
+            container.querySelectorAll('[data-tab-panel]').forEach((panel) => {
+                panel.classList.toggle('hidden', panel.getAttribute('data-tab-panel') !== id);
+            });
+        });
+    });
+
+    const shareButtons = container.querySelectorAll('[data-share]');
+    shareButtons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const type = button.getAttribute('data-share');
+            const url = window.location.href;
+            const message = `Lihat ${payload.name} di Shoesify: ${url}`;
+
+            if (type === 'copy') {
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showToast('Tautan berhasil disalin.');
+                } catch (error) {
+                    console.error('Copy failed', error);
+                    showToast('Gagal menyalin tautan. Coba lagi.');
+                }
+            }
+
+            if (type === 'whatsapp') {
+                const encoded = encodeURIComponent(message);
+                window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener');
+            }
+        });
+    });
+
+    window.addEventListener('cart-updated', () => {
+        // Placeholder to hook future inventory updates.
+    });
+
+    syncState();
+
+    if (sticky) {
+        const setVisibility = () => {
+            sticky.classList.toggle('opacity-0', window.scrollY < 360);
+        };
+        setVisibility();
+        document.addEventListener('scroll', setVisibility, { passive: true });
+    }
+};
+
 onReady(() => {
     const showToast = setupToast();
 
@@ -424,8 +891,10 @@ onReady(() => {
     setupCountdowns();
     setupWishlist(showToast);
     setupAddToCart(showToast);
+    setupBuyNow(showToast);
     setupQuickView(showToast);
     setupNewsletter(showToast);
     setupHeroSwiper();
     setupTestimonialSwiper();
+    setupProductDetail(showToast);
 });

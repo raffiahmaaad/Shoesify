@@ -79,7 +79,7 @@
 
         <section id="katalog" class="space-y-10">
             <h2 class="section-heading">Filter & temukan sneaker favoritmu</h2>
-            <livewire:products.catalog />
+            <livewire:products.catalog :search="request('search')" />
         </section>
     </main>
 
