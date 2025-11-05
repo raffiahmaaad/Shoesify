@@ -9,6 +9,7 @@ use App\Models\User;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,7 +28,7 @@ class UserResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Forms\Components\Section::make('Profile')
+            Section::make('Profile')
                 ->schema([
                     Forms\Components\TextInput::make('name')
                         ->required()
@@ -57,7 +58,7 @@ class UserResource extends Resource
                         ->maxSize(2048),
                 ])
                 ->columnSpan(1),
-            Forms\Components\Section::make('Bio')
+            Section::make('Bio')
                 ->schema([
                     Forms\Components\Textarea::make('bio')
                         ->rows(6)

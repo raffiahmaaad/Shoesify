@@ -71,19 +71,49 @@
     }
 
     .glass-dropdown {
-        @apply relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/88 text-white/85 shadow-[0_48px_120px_rgba(5,15,33,0.6)] backdrop-blur-2xl;
+        @apply relative overflow-hidden rounded-3xl border border-white/10 bg-white/10 text-white/85 shadow-[0_40px_110px_rgba(5,15,33,0.38)] backdrop-blur-2xl;
     }
 
     .glass-dropdown::before {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(77, 228, 212, 0.08));
-        opacity: 0.45;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(77, 228, 212, 0.12));
+        opacity: 0.55;
         pointer-events: none;
     }
 
     .glass-dropdown > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .glass-chip,
+    .glass-icon {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .glass-chip {
+        @apply border border-white/10 bg-white/6 !text-white shadow-[0_18px_44px_rgba(5,15,33,0.32)] backdrop-blur-xl supports-[backdrop-filter:blur(0)]:bg-white/10 dark:border-zinc-700/70 dark:bg-zinc-900/70 dark:!text-zinc-100;
+    }
+
+    .glass-icon {
+        @apply border border-white/10 bg-white/6 !text-white shadow-[0_18px_44px_rgba(5,15,33,0.32)] backdrop-blur-xl supports-[backdrop-filter:blur(0)]:bg-white/10 dark:border-zinc-700/70 dark:bg-zinc-900/75 dark:!text-zinc-100;
+    }
+
+    .glass-chip::before,
+    .glass-icon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(77, 228, 212, 0.1));
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    .glass-chip > *,
+    .glass-icon > * {
         position: relative;
         z-index: 1;
     }

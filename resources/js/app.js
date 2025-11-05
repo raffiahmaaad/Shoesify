@@ -164,6 +164,38 @@ window.headerShell = () => ({
     },
 });
 
+window.navSections = (homePath = '/') => ({
+    currentSection: null,
+    homePath,
+    activeClass:
+        'glass-chip hover:-translate-y-0.5',
+    inactiveClass:
+        'text-white/70 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100',
+    init() {
+        this.homePath = homePath || '/';
+        this.syncFromLocation();
+        window.addEventListener('hashchange', () => this.syncFromLocation());
+        window.addEventListener('popstate', () => this.syncFromLocation());
+    },
+    syncFromLocation() {
+        const onHome = window.location.pathname === this.homePath;
+        this.currentSection = onHome ? (window.location.hash.replace('#', '') || null) : null;
+    },
+    setSection(section) {
+        if (!section) {
+            return;
+        }
+        this.currentSection = section;
+    },
+    classes(section) {
+        if (!section) {
+            return this.inactiveClass;
+        }
+
+        return this.currentSection === section ? `${this.activeClass}` : this.inactiveClass;
+    },
+});
+
 window.headerSearchStore = () => ({
     recent: [],
     dropdown: false,
