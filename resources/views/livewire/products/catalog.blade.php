@@ -137,9 +137,20 @@
                                     </button>
                                 </div>
                                 <div class="flex flex-1 flex-col gap-4">
-                                    <div class="space-y-1 text-white/70">
-                                        <span class="text-xs font-medium uppercase tracking-[0.3em] text-[#4de4d4]">{{ $product['brand'] }}</span>
+                                    <div class="space-y-2 text-white/70">
+                                        <div class="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/50">
+                                            <span class="font-medium text-[#4de4d4]">{{ $product['brand'] }}</span>
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/70 dark:border-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-200">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7.5h18m-2.25-3v15a1.5 1.5 0 0 1-1.5 1.5h-10.5a1.5 1.5 0 0 1-1.5-1.5v-15" />
+                                                </svg>
+                                                {{ $product['in_stock'] ? 'Stok ' . $product['stock'] : 'Stok habis' }}
+                                            </span>
+                                        </div>
                                         <h3 class="text-lg font-semibold text-white">{{ $product['name'] }}</h3>
+                                        @if ($product['category_name'])
+                                            <p class="text-xs text-white/50">Kategori: {{ $product['category_name'] }}</p>
+                                        @endif
                                         <p class="text-sm text-white/60">{{ $product['description'] }}</p>
                                     </div>
                                     <div class="flex items-center gap-1 text-sm text-[#f8c572]">
@@ -181,16 +192,33 @@
                         @foreach ($visibleProducts as $product)
                             <article wire:key="product-list-{{ $product['id'] }}" class="hover-card relative grid gap-6 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-white/70 md:grid-cols-[0.9fr_1fr]" data-product-card data-product='@json($product)'>
                                 <div class="relative h-56 overflow-hidden rounded-3xl">
-                                    <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" class="h-full w-full object-cover transition duration-500">
+                                    @if ($product['image'])
+                                        <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" class="h-full w-full object-cover transition duration-500 dark:brightness-90">
+                                    @else
+                                        <div class="flex h-full w-full items-center justify-center bg-white/5 text-xs uppercase tracking-[0.3em] text-white/50 dark:bg-zinc-800/70 dark:text-zinc-400">
+                                            No Image
+                                        </div>
+                                    @endif
                                     @if ($product['discount'] > 0)
                                         <span class="absolute left-4 top-4 rounded-full bg-[#f57b51] px-3 py-1 text-xs font-semibold text-white shadow-lg">-{{ $product['discount'] }}%</span>
                                     @endif
                                 </div>
                                 <div class="flex flex-col gap-4">
                                     <div class="flex items-center justify-between">
-                                        <div class="space-y-1 text-white/70">
-                                            <span class="text-xs font-medium uppercase tracking-[0.3em] text-[#4de4d4]">{{ $product['brand'] }}</span>
+                                        <div class="space-y-2 text-white/70">
+                                            <div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-white/50">
+                                                <span class="font-medium text-[#4de4d4]">{{ $product['brand'] }}</span>
+                                                <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/70 dark:border-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-200">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7.5h18m-2.25-3v15a1.5 1.5 0 0 1-1.5 1.5h-10.5a1.5 1.5 0 0 1-1.5-1.5v-15" />
+                                                    </svg>
+                                                    {{ $product['in_stock'] ? 'Stok ' . $product['stock'] : 'Stok habis' }}
+                                                </span>
+                                            </div>
                                             <h3 class="text-2xl font-semibold text-white">{{ $product['name'] }}</h3>
+                                            @if ($product['category_name'])
+                                                <p class="text-xs text-white/50">Kategori: {{ $product['category_name'] }}</p>
+                                            @endif
                                         </div>
                                         <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/20" data-wishlist>
                                             <span class="sr-only">Tambah ke wishlist</span>

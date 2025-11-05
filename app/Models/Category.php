@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Category extends Model
 {
@@ -22,6 +23,17 @@ class Category extends Model
         'is_active',
         'sort_order',
     ];
+
+    protected static function booted(): void
+    {
+        $flushNavCache = static function (): void {
+            Cache::forget('nav.categories');
+        };
+
+        static::created($flushNavCache);
+        static::updated($flushNavCache);
+        static::deleted($flushNavCache);
+    }
 
     public function parent(): BelongsTo
     {

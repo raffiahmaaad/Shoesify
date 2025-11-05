@@ -2,7 +2,12 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
-    @include('partials.head', ['title' => 'Shoesify – Katalog Sneaker'])
+@php
+    /** @var \App\Models\Category|null $category */
+    $selectedCategory = $category ?? null;
+    $pageTitle = $selectedCategory ? 'Shoesify – ' . $selectedCategory->name : 'Shoesify – Katalog Sneaker';
+@endphp
+@include('partials.head', ['title' => $pageTitle])
     @livewireStyles
 </head>
 
@@ -15,15 +20,7 @@
         <div class="absolute left-0 top-24 h-[280px] w-[280px] rounded-full bg-[#2fd3c6]/20 blur-[120px]"></div>
     </div>
 
-    @include('partials.front.nav', [
-        'navLinks' => [
-            ['label' => 'Product', 'href' => route('products.index')],
-            ['label' => 'Collections', 'href' => route('home') . '#collections'],
-            ['label' => 'Categories', 'href' => route('home') . '#categories'],
-            ['label' => 'Promotion', 'href' => route('home') . '#promos'],
-            // ['label' => 'Reviews', 'href' => route('home') . '#testimonials'],
-        ],
-    ])
+    @include('partials.front.nav')
 
     <main class="mx-auto flex w-full max-w-7xl flex-col gap-16 px-6 pb-24 pt-16 md:px-10">
         <section class="space-y-6">
@@ -36,19 +33,34 @@
                     <li>
                         <a href="{{ route('products.index') }}" class="transition hover:text-white">Katalog</a>
                     </li>
+                    @if ($selectedCategory)
+                        <li aria-hidden="true">/</li>
+                        <li>
+                            <span class="text-white/70">{{ $selectedCategory->name }}</span>
+                        </li>
+                    @endif
                 </ol>
             </nav>
 
             <div class="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
                 <div class="space-y-5">
-                    <span class="pill-badge">Kurasi minggu ini</span>
+                    <span class="pill-badge">
+                        {{ $selectedCategory ? 'Kategori ' . $selectedCategory->name : 'Kurasi minggu ini' }}
+                    </span>
                     <h1 class="text-4xl font-semibold leading-tight tracking-tight text-white md:text-5xl">
-                        Jelajahi lini sneaker tercanggih dengan filter real-time dan pengalaman quick view yang super
-                        mulus.
+                        @if ($selectedCategory)
+                            Jelajahi koleksi {{ $selectedCategory->name }} dengan filter instan dan stok terpantau real-time.
+                        @else
+                            Jelajahi lini sneaker tercanggih dengan filter real-time dan pengalaman quick view yang super mulus.
+                        @endif
                     </h1>
                     <p class="max-w-2xl text-sm text-white/70 md:text-base">
-                        Katalog Shoesify menggabungkan teknologi Livewire dengan desain future-forward. Cari sesuai
-                        kebutuhan, lihat detail warna, dan tambahkan ke keranjang tanpa jeda.
+                        @if ($selectedCategory && filled($selectedCategory->description))
+                            {{ $selectedCategory->description }}
+                        @else
+                            Katalog Shoesify menggabungkan teknologi Livewire dengan desain future-forward. Cari sesuai
+                            kebutuhan, lihat detail warna, dan tambahkan ke keranjang tanpa jeda.
+                        @endif
                     </p>
                     <div class="flex flex-wrap gap-3">
                         <a href="#katalog"
@@ -86,8 +98,11 @@
         </section>
 
         <section id="katalog" class="space-y-10">
-            <h2 class="section-heading">Filter & temukan sneaker favoritmu</h2>
-            <livewire:products.catalog :search="request('search', '')" />
+            <h2 class="section-heading">
+                {{ $selectedCategory ? 'Filter & temukan sneaker terbaik di kategori ini' : 'Filter & temukan sneaker favoritmu' }}
+            </h2>
+            <livewire:products.catalog :search="request('search', '')"
+                :category="$selectedCategory?->slug ?? request('category')" />
         </section>
     </main>
 

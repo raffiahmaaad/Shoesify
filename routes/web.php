@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -11,6 +12,7 @@ Route::get('/', function () {
 
 Route::view('/products', 'products.index')->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::view('/cart', 'cart.index')->name('cart.index');
 Route::view('/checkout', 'checkout.index')
     ->middleware(['auth', 'verified'])

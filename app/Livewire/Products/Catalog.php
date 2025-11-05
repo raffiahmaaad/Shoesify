@@ -11,6 +11,7 @@ use Livewire\Component;
 class Catalog extends Component
 {
     public ?string $search = '';
+    public ?string $category = null;
 
     /**
      * @var array<int, string>
@@ -35,6 +36,7 @@ class Catalog extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'category' => ['except' => null],
     ];
 
     /**
@@ -54,20 +56,21 @@ class Catalog extends Component
     public const CACHE_KEY = 'catalog.products';
     private const CACHE_TTL = 900;
 
-    public function mount(?string $search = null): void
+    public function mount(?string $search = null, ?string $category = null): void
     {
         $this->search = $search ?? '';
+        $this->category = $category ?: $this->category;
 
         $this->catalog = Cache::remember(
             self::CACHE_KEY,
             now()->addSeconds(self::CACHE_TTL),
             function (): Collection {
                 return Product::query()
-                    ->with(['brand', 'variants'])
+                    ->with(['brand', 'variants', 'category'])
                     ->orderByDesc('release_date')
                     ->get()
                     ->map(function (Product $product): array {
-                        $primaryImage = collect($product->images)->filter()->first();
+                        $primaryImage = collect($product->images ?? [])->filter()->first();
                         $sizes = $product->variants
                             ->pluck('size')
                             ->filter()
@@ -85,6 +88,8 @@ class Catalog extends Component
                             ->values()
                             ->all();
 
+                        $stockSum = (int) $product->variants->sum('stock_quantity');
+
                         return [
                             'id' => $product->id,
                             'name' => $product->name,
@@ -100,13 +105,32 @@ class Catalog extends Component
                             'colors' => $colors,
                             'release_date' => optional($product->release_date)->toDateString(),
                             'is_featured' => (bool) $product->is_featured,
+                            'category_name' => optional($product->category)->name,
+                            'category_slug' => optional($product->category)->slug,
+                            'stock' => $stockSum,
+                            'in_stock' => $stockSum > 0,
                         ];
                     });
             }
         );
 
-        $min = (int) ($this->catalog->min('price') ?? 0);
-        $max = (int) ($this->catalog->max('price') ?? 0);
+        $this->refreshPriceBounds();
+    }
+
+    protected function refreshPriceBounds(): void
+    {
+        $scoped = $this->scopedCatalog();
+
+        if ($scoped->isEmpty()) {
+            $this->priceBounds = ['min' => 0, 'max' => 0];
+            $this->priceMin = 0;
+            $this->priceMax = 0;
+
+            return;
+        }
+
+        $min = (int) ($scoped->min('price') ?? 0);
+        $max = (int) ($scoped->max('price') ?? 0);
 
         $this->priceBounds = ['min' => $min, 'max' => $max];
         $this->priceMin = $min;
@@ -117,6 +141,11 @@ class Catalog extends Component
     {
         if (Str::startsWith($property, ['search', 'selectedBrands', 'selectedSizes', 'selectedColors', 'priceMin', 'priceMax', 'sort'])) {
             $this->perPage = 9;
+        }
+
+        if ($property === 'category') {
+            $this->perPage = 9;
+            $this->refreshPriceBounds();
         }
     }
 
@@ -161,7 +190,7 @@ class Catalog extends Component
 
     public function getBrandsProperty(): array
     {
-        return $this->catalog
+        return $this->scopedCatalog()
             ->pluck('brand')
             ->unique()
             ->sort()
@@ -171,7 +200,7 @@ class Catalog extends Component
 
     public function getSizesProperty(): array
     {
-        return $this->catalog
+        return $this->scopedCatalog()
             ->flatMap(fn (array $product) => $product['sizes'])
             ->unique()
             ->sort()
@@ -181,7 +210,7 @@ class Catalog extends Component
 
     public function getColorPaletteProperty(): array
     {
-        return $this->catalog
+        return $this->scopedCatalog()
             ->flatMap(fn (array $product) => $product['colors'])
             ->unique(fn (array $color) => Str::lower($color['name']))
             ->values()
@@ -221,9 +250,22 @@ class Catalog extends Component
         ]);
     }
 
+    protected function scopedCatalog(): Collection
+    {
+        return collect($this->catalog->all())
+            ->filter(function (array $product): bool {
+                if (! $this->category) {
+                    return true;
+                }
+
+                return ($product['category_slug'] ?? null) === $this->category;
+            })
+            ->values();
+    }
+
     protected function filteredCatalog(): Collection
     {
-        $collection = collect($this->catalog->all());
+        $collection = $this->scopedCatalog();
 
         if (($this->search ?? '') !== '') {
             $needle = Str::lower((string) $this->search);

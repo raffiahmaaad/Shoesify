@@ -43,6 +43,7 @@ const ensureFluxThemeBridge = () => {
             }
 
             document.documentElement.dataset.theme = currentMode;
+            window.dispatchEvent(new CustomEvent('flux:appearance-changed', { detail: { mode: currentMode } }));
 
             if (persistChoice) {
                 if (mode === 'system') {
@@ -130,9 +131,16 @@ const ensureFluxThemeBridge = () => {
 onReady(() => ensureFluxThemeBridge());
 
 window.headerShell = () => ({
+    mobileNav: false,
     mobileSearch: false,
     init() {
         ensureFluxThemeBridge();
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024 && this.mobileNav) {
+                this.mobileNav = false;
+                document.documentElement.classList.remove('overflow-hidden');
+            }
+        });
     },
     toggleSearch() {
         this.mobileSearch = !this.mobileSearch;
@@ -142,6 +150,16 @@ window.headerShell = () => ({
                 const input = document.querySelector('[data-mobile-search] input[type="search"]');
                 input?.focus();
             }, 120);
+        }
+    },
+    toggleMobileNav() {
+        this.mobileNav = !this.mobileNav;
+        document.documentElement.classList.toggle('overflow-hidden', this.mobileNav);
+    },
+    closeMobileNav() {
+        if (this.mobileNav) {
+            this.mobileNav = false;
+            document.documentElement.classList.remove('overflow-hidden');
         }
     },
 });
@@ -199,6 +217,18 @@ window.headerSearchStore = () => ({
     },
     persist() {
         localStorage.setItem(recentSearchStorageKey, JSON.stringify(this.recent));
+    },
+});
+
+window.darkToggle = () => ({
+    dark: document.documentElement.classList.contains('dark'),
+    init() {
+        window.addEventListener('flux:appearance-changed', (event) => {
+            this.dark = event.detail.mode === 'dark';
+        });
+    },
+    toggle() {
+        window.$flux.dark = !this.dark;
     },
 });
 
