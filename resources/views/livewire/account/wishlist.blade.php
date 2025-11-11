@@ -6,8 +6,10 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Volt\Component;
 
 new class extends Component {
-    public array $items = [];
-    public CartManager $cartManager;
+    // Livewire serialization doesn't support typed public properties in this context,
+    // use untyped properties so Livewire can hydrate/serialize correctly.
+    public $items = [];
+    public $cartManager;
 
     public function mount(CartManager $cartManager): void
     {

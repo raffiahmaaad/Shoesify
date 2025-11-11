@@ -4,10 +4,12 @@
 
 @php
     $links = [
-        ['label' => 'Pesanan', 'route' => 'account.orders', 'icon' => '🧾'],
+        // Reordered: Profile, Orders, Addresses, Wishlist, Settings
         ['label' => 'Profil', 'route' => 'account.profile', 'icon' => '👤'],
+        ['label' => 'Pesanan', 'route' => 'account.orders', 'icon' => '🧾'],
         ['label' => 'Alamat', 'route' => 'account.addresses', 'icon' => '📍'],
         ['label' => 'Wishlist', 'route' => 'account.wishlist', 'icon' => '❤️'],
+        ['label' => 'Settings', 'route' => 'account.settings', 'icon' => '⚙️'],
     ];
 @endphp
 
@@ -23,21 +25,18 @@
                 @php
                     $active = request()->routeIs($link['route']) || request()->routeIs($link['route'] . '.*');
                 @endphp
-                <a
-                    href="{{ route($link['route']) }}"
-                    wire:navigate
-                    @class([
-                        'inline-flex items-center justify-between gap-3 rounded-2xl px-4 py-3 transition',
-                        'bg-[#4de4d4]/15 text-white' => $active,
-                        'bg-white/5 hover:bg-white/10 text-white/70' => ! $active,
-                    ])
-                >
+                <a href="{{ route($link['route']) }}" wire:navigate @class([
+                    'inline-flex items-center justify-between gap-3 rounded-2xl px-4 py-3 transition',
+                    'bg-[#4de4d4]/15 text-white' => $active,
+                    'bg-white/5 hover:bg-white/10 text-white/70' => !$active,
+                ])>
                     <span class="flex items-center gap-3">
                         <span class="text-base">{{ $link['icon'] }}</span>
                         <span>{{ $link['label'] }}</span>
                     </span>
                     @if ($active)
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
                         </svg>
                     @endif
@@ -45,7 +44,8 @@
             @endforeach
         </nav>
         <p class="text-[11px] leading-relaxed text-white/50">
-            Kelola setiap pesanan, alamat, dan wishlist di satu tempat. Semua perubahan tersinkron otomatis dengan checkout.
+            Kelola setiap pesanan, alamat, dan wishlist di satu tempat. Semua perubahan tersinkron otomatis dengan
+            checkout.
         </p>
     </aside>
 

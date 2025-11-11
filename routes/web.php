@@ -23,28 +23,36 @@ Route::view('dashboard', 'dashboard')
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', 'settings/profile');
+    // Redirect legacy /settings routes to /account/settings
+    Route::redirect('settings', 'account/settings');
 
-    Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
-    Volt::route('settings/password', 'settings.password')->name('user-password.edit');
-    Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
-
-    Volt::route('settings/two-factor', 'settings.two-factor')
-        ->middleware(
-            when(
-                Features::canManageTwoFactorAuthentication()
-                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
-                ['password.confirm'],
-                [],
-            ),
-        )
-        ->name('two-factor.show');
-
+    // All account-related routes (profile, orders, addresses, wishlist, settings)
     Route::prefix('account')->as('account.')->middleware(['verified'])->group(function () {
-        Volt::route('account/orders', 'account.orders')->name('orders');
-        Volt::route('account/orders/{order}', 'account.orders-show')->name('orders.show');
-        Volt::route('account/profile', 'account.profile')->name('profile');
-        Volt::route('account/addresses', 'account.addresses')->name('addresses');
-        Volt::route('account/wishlist', 'account.wishlist')->name('wishlist');
+        // Profile & Orders
+        Volt::route('profile', 'account.profile')->name('profile');
+        Volt::route('orders', 'account.orders')->name('orders');
+        Volt::route('orders/{order}', 'account.orders-show')->name('orders.show');
+
+        // Addresses & Wishlist
+        Volt::route('addresses', 'account.addresses')->name('addresses');
+        Volt::route('wishlist', 'account.wishlist')->name('wishlist');
+
+        // Settings (moved under /account)
+        Volt::route('settings', 'account.settings')->name('settings');
+        Volt::route('settings/password', 'account.settings-password')->name('settings.password');
+        Volt::route('settings/appearance', 'account.settings-appearance')->name('settings.appearance');
+        Volt::route('settings/two-factor', 'account.settings-two-factor')
+            ->middleware(
+                when(
+                    Features::canManageTwoFactorAuthentication()
+                        && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                    ['password.confirm'],
+                    [],
+                ),
+            )
+            ->name('settings.two-factor');
     });
 });
+
+Route::get('/products/category/{category}', [ProductController::class, 'index'])->name('products.category');
+Route::get('/products/brand/{brand}', [ProductController::class, 'byBrand'])->name('products.brand');
